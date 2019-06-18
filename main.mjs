@@ -1,4 +1,4 @@
-import Transaction from "./transaction";
+import Transaction from './transaction';
 
 const scenario = [
     {
@@ -8,10 +8,14 @@ const scenario = [
             description: 'This action is responsible for reading the most popular customers'
         },
         call: async (store) => {
-            return {};
+            let st = {
+                name: 'giorgi',
+                email: 'giorgi1997arabuli@gmail.com'
+            };
+            return { ...store, ...st };
         },
-        restore: async (store) => {
-            console.log("step 1 restore called");
+        restore: async () => {
+            console.log('step 1 restore called');
         }
     },
     {
@@ -21,11 +25,15 @@ const scenario = [
             description: 'This action is responsible for Adding new customer'
         },
         call: async (store) => {
-            return { "step 2": "store changed" };
+            return {
+                ...store,
+                surname: 'arabuli',
+                age: 22
+            };
         },
-        restore: async (store) => {
-            console.log("step 2 restore called");
-            throw new Error("restore failed");
+        restore: async () => {
+            console.log('step 2 restore called');
+            // throw new Error('restore failed');
         }
     },
     {
@@ -36,7 +44,7 @@ const scenario = [
         },
         // callback for main execution
         call: async (store) => {
-            throw new Error("some error step 3");
+            // throw new Error('some error step 3');
         },
         // callback for rollback
         // restore: async (store) => { }
@@ -52,14 +60,14 @@ const transaction = new Transaction();
         const logs = transaction.logs; // []
         console.log(store);
         // //logs
-        // console.log("******************************");
+        // console.log('******************************');
 
-        // console.log(logs);
+        console.log(logs);
 
-        // console.log("******************************");
+        // console.log('******************************');
 
     } catch (err) {
-        console.log("******************************");
+        console.log('******************************');
         console.log(err);
         // Send email about broken transaction
     }

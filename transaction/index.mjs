@@ -39,7 +39,9 @@ export default class Transaction {
                 //save current state
                 let storeBefore = this.store;
                 //get new state
-                let storeAfter = await scenarios[i].call(this.store);
+                //call mustnot mutate store it must return new object
+                this.store = await scenarios[i].call(this.store);
+                let storeAfter = this.store;
                 //build up log object
                 let { meta, index } = scenarios[i];
                 this.logs.push({
@@ -72,9 +74,6 @@ export default class Transaction {
                 }
             }
         }
-        // scenarios.forEach(async (scenario, currentIndex) => {
-
-        // });
     }
 }
 
