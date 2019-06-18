@@ -3,45 +3,115 @@ export default class Transaction {
         this.store = {};
         this.logs = [];
     }
-    validate(property, type, arg, required) {
-        if (required) {
-            if (typeof property !== type) {
-                throw new Error(`${arg} is required and must be ${type}`);
-            }
-        } else {
-            if (property !== undefined && typeof property !== type) {
-                throw new Error(`${arg} must be ${type}`);
+    validate(scenario, schema) {
+
+        let schemaKeyes = Object.keys(schema).filter((item) => {
+            return typeof schema[item] === 'object';
+        });
+        let scenarioKeyes = Object.keys(scenario);
+        //check for missing scenario keyes
+        for (const key of schemaKeyes) {
+            if (schema[key].isRequired) {
+                if (scenarioKeyes.indexOf(key) == -1) {
+                    throw new Error(`{${key}} is not found`);
+                }
             }
         }
-
-        return this;
-    }
-
-    validateScenarios(scenarios) {
-        scenarios.forEach(scenario => {
-            let { index, meta: { title, description }, call, restore } = scenario;
-            this.validate(index, 'number', 'index', true)
-                .validate(title, 'string', 'title', true)
-                .validate(description, 'string', 'description', true)
-                .validate(call, 'function', 'call', true)
-                .validate(restore, 'function', 'restore', false);
+        //check for extra scenario keyes
+        for (const key of scenarioKeyes) {
+            if (schemaKeyes.indexOf(key) == -1) {
+                throw new Error(`{${key}} is not recognized`);
+            }
+        }
+        scenarioKeyes.forEach((item) => {
+            let params = { ...schema[item] }
+            if (typeof scenario[item] === schema[item].type && typeof scenario[item] === 'object') {
+                this.validate(scenario[item], schema[item])
+            } else {
+                if (params.isPositive) {
+                    if (scenario[item] < 0) {
+                        throw new Error(`{${item}} is negative`);
+                    }
+                }
+                if (!params.isRequired) {
+                    if (scenario[item] !== undefined && typeof scenario[item] !== schema[item].type) {
+                        throw new Error(`{${item}} is not required but type must be {${schema[item].type}}`);
+                    }
+                } else {
+                    if (typeof scenario[item] !== schema[item].type) {
+                        throw new Error(`{${item}} is required and type must be {${schema[item].type}}`);
+                    }
+                }
+            }
         });
     }
 
-    async dispatch(scenarios) {
-        this.validateScenarios(scenarios);
+    validateScenarios(scenarios, schema) {
+        scenarios.forEach(scenario => {
+            this.validate(scenario, schema);
+        });
         //sort scenarios by index
         scenarios.sort((curr, next) => {
             return curr.index > next.index;
         });
+        //specifical validation for restore silent
+        if (scenarios.length >= 2) {
+            if (scenarios[scenarios.length - 1].hasOwnProperty('restore')) {
+                throw new Error(`lenght of scenarios is ${scenarios.length} and last element must not have {restore}`);
+            }
+        } else {
+            if (scenarios[0].hasOwnProperty('restore')) {
+                throw new Error(`lenght of scenarios is ${scenarios.length} and it must not have {restore}`);
+
+            }
+        }
+    }
+
+    async dispatch(scenarios) {
+        let schema = {
+            index: {
+                type: 'number',
+                isPositive: true,
+                isRequired: true
+            },
+            silent: {
+                type: 'boolean',
+                isRequired: false
+            },
+            meta: {
+                type: 'object',
+                isRequired: true,
+                // test:{
+                //     type: 'string',
+                //     isRequired: true,
+                // },
+                title: {
+                    type: 'string',
+                    isRequired: true
+                },
+                description: {
+                    type: 'string',
+                    isRequired: true
+                }
+            },
+            call: {
+                type: 'function',
+                isRequired: true
+            },
+            restore: {
+                type: 'function',
+                isRequired: false
+            }
+        }
+        this.validateScenarios(scenarios, schema);
+
         for (let i = 0; i < scenarios.length; i++) {
+            //save current state
+            let storeBefore = { ...this.store };
             try {
-                //save current state
-                let storeBefore = this.store;
                 //get new state
-                //call mustnot mutate store it must return new object
-                this.store = await scenarios[i].call(this.store);
-                let storeAfter = this.store;
+                await scenarios[i].call(this.store);
+                let storeAfter = { ...this.store };
                 //build up log object
                 let { meta, index } = scenarios[i];
                 this.logs.push({
@@ -52,14 +122,13 @@ export default class Transaction {
                     error: null
                 });
             } catch (err) {
-                let { meta, index, flag } = scenarios[i];
-                if (flag == false || flag == undefined) {
+                let { meta, index, silent } = scenarios[i];
+                if (silent == false || silent == undefined) {
                     this.logs.push({
                         meta,
                         index,
                         error: err
                     });
-
                     for (let j = i - 1; j >= 0; j--) {
                         if (scenarios[j].restore) {
                             try {
@@ -71,6 +140,16 @@ export default class Transaction {
                         }
                     }
                     this.store = null;
+                } else if (silent == true) {
+                    let storeAfter = this.store;
+                    let { meta, index } = scenarios[i];
+                    this.logs.push({
+                        meta,
+                        index,
+                        storeBefore,
+                        storeAfter,
+                        error: err
+                    });
                 }
             }
         }

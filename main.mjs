@@ -3,16 +3,15 @@ import Transaction from './transaction';
 const scenario = [
     {
         index: 1,
+        // a:"a",
         meta: {
             title: 'Read popular customers',
-            description: 'This action is responsible for reading the most popular customers'
+            description: 'This action is responsible for reading the most popular customers',
+            // test: 's'
         },
         call: async (store) => {
-            let st = {
-                name: 'giorgi',
-                email: 'giorgi1997arabuli@gmail.com'
-            };
-            return { ...store, ...st };
+            store.name = 'giorgi';
+            store.email = 'giorgi1997arabuli@gmail.com';
         },
         restore: async () => {
             console.log('step 1 restore called');
@@ -20,16 +19,14 @@ const scenario = [
     },
     {
         index: 2,
+        silent: true,
         meta: {
             title: 'Add customer',
             description: 'This action is responsible for Adding new customer'
         },
         call: async (store) => {
-            return {
-                ...store,
-                surname: 'arabuli',
-                age: 22
-            };
+            store.surname = 'arabuli';
+            throw new Error('🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥');
         },
         restore: async () => {
             console.log('step 2 restore called');
@@ -44,8 +41,13 @@ const scenario = [
         },
         // callback for main execution
         call: async (store) => {
-            // throw new Error('some error step 3');
+            // return {
+            //     ...store,
+            //     surname: 'arabuli',
+            //     age: 22
+            // };
         },
+        silent: true,
         // callback for rollback
         // restore: async (store) => { }
     }
@@ -58,11 +60,16 @@ const transaction = new Transaction();
         await transaction.dispatch(scenario);
         const store = transaction.store; // {} | null
         const logs = transaction.logs; // []
-        console.log(store);
+        // console.log(store);
         // //logs
         // console.log('******************************');
 
-        console.log(logs);
+        for (const log of logs) {
+            console.log('******************************');
+            console.log(log);
+
+        }
+        // console.log(logs);
 
         // console.log('******************************');
 
