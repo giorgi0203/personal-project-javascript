@@ -129,6 +129,7 @@ export default class Transaction {
                         }
                     }
                     this.store = null;
+                    break;
                 } else if (silent == true) {
                     let storeAfter = this.store;
                     let { meta, index } = scenarios[i];
