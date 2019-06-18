@@ -51,19 +51,12 @@ export default class Transaction {
             this.validate(scenario, schema);
         });
         //sort scenarios by index
-        scenarios.sort((curr, next) => {
+        scenarios = scenarios.sort((curr, next) => {
             return curr.index > next.index;
         });
         //specifical validation for restore silent
-        if (scenarios.length >= 2) {
-            if (scenarios[scenarios.length - 1].hasOwnProperty('restore')) {
-                throw new Error(`lenght of scenarios is ${scenarios.length} and last element must not have {restore}`);
-            }
-        } else {
-            if (scenarios[0].hasOwnProperty('restore')) {
-                throw new Error(`lenght of scenarios is ${scenarios.length} and it must not have {restore}`);
-
-            }
+        if (scenarios[scenarios.length - 1].hasOwnProperty('restore')) {
+            throw new Error(`lenght of scenarios is ${scenarios.length} and last element must not have {restore}`);
         }
     }
 
@@ -81,10 +74,6 @@ export default class Transaction {
             meta: {
                 type: 'object',
                 isRequired: true,
-                // test:{
-                //     type: 'string',
-                //     isRequired: true,
-                // },
                 title: {
                     type: 'string',
                     isRequired: true
