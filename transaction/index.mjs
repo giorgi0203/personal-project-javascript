@@ -25,7 +25,7 @@ export default class Transaction {
         }
         scenarioKeyes.forEach((item) => {
             let params = { ...schema[item] }
-            if (typeof scenario[item] === schema[item].type && typeof scenario[item] === 'object') {
+            if (typeof scenario[item] === schema[item].type && typeof scenario[item] === 'object' && !Array.isArray(scenario[item])) {
                 this.validate(scenario[item], schema[item])
             } else {
                 if (params.isPositive) {
@@ -38,7 +38,7 @@ export default class Transaction {
                         throw new Error(`{${item}} is not required but type must be {${schema[item].type}}`);
                     }
                 } else {
-                    if (typeof scenario[item] !== schema[item].type) {
+                    if (typeof scenario[item] !== schema[item].type || (Array.isArray(scenario[item]) && schema[item].type === 'object')) {
                         throw new Error(`{${item}} is required and type must be {${schema[item].type}}`);
                     }
                 }
@@ -52,7 +52,7 @@ export default class Transaction {
         });
         //sort scenarios by index
         scenarios = scenarios.sort((curr, next) => {
-            return curr.index > next.index? 1 : -1;
+            return curr.index > next.index ? 1 : -1;
         });
         //specifical validation for restore silent
         if (scenarios[scenarios.length - 1].hasOwnProperty('restore')) {
