@@ -52,7 +52,7 @@ export default class Transaction {
         });
         //sort scenarios by index
         scenarios = scenarios.sort((curr, next) => {
-            return curr.index > next.index;
+            return curr.index > next.index? 1 : -1;
         });
         //specifical validation for restore silent
         if (scenarios[scenarios.length - 1].hasOwnProperty('restore')) {
